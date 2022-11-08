@@ -2,6 +2,7 @@ import { GetStaticProps, GetStaticPaths, NextPage } from "next";
 import { Pokemon } from "../../interfaces";
 import { Detail } from '../../components/UI/detail';
 import getPokemonIngo from '../../utils/getPokemonInfo';
+import { redirect } from "next/dist/server/api-utils";
 
 interface Props {
   pokemon: Pokemon;
@@ -21,17 +22,28 @@ export const getStaticPaths: GetStaticPaths = (ctx) => {
     paths: allPokemons.map((id) => ({
       params: { id },
     })),
-    fallback: false, //"blocking", //Blocking permite pasar parametros que no existen
+    fallback: "blocking", //Blocking permite pasar parametros que no existen
   };
 };
 
 export const getStaticProps: GetStaticProps = async (ctx) => {
   const { id } = ctx.params as { id: string };
+  const pokemon = await getPokemonIngo(id);
+
+  if (!pokemon) {
+    return {
+      redirect: {
+        destination: '/',
+        permanent: false
+      }
+    }
+  }
 
   return {
     props: {
-      pokemon: await getPokemonIngo(id),
+      pokemon
     },
+    // revalidate: 20
   };
 };
 
